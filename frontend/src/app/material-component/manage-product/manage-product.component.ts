@@ -20,6 +20,7 @@ export class ManageProductComponent implements OnInit {
     'category',
     'description',
     'price',
+    'quantity',
     'edit',
   ];
   dataSource: any;

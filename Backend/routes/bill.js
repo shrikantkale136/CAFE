@@ -31,6 +31,9 @@ router.post("/generateReport", auth.authenticate, (req, res) => {
     ],
     (err, results) => {
       if (!err) {
+        // Update product quantities after successful bill insertion
+        updateProductQuantities(productDetailsReport);
+
         ejs.renderFile(
           path.join(__dirname, "", "report.ejs"),
           {
@@ -66,6 +69,77 @@ router.post("/generateReport", auth.authenticate, (req, res) => {
       }
     }
   );
+});
+
+// Function to update product quantities in the product table
+function updateProductQuantities(productDetailsReport) {
+  productDetailsReport.forEach((product) => {
+    const updateQuery =
+      "UPDATE product SET quantity = quantity - ? WHERE id = ?";
+
+    connection.query(
+      updateQuery,
+      [product.quantity, product.id],
+      (updateErr, updateResults) => {
+        if (updateErr) {
+          console.error("Update Error:", updateErr);
+        }
+      }
+    );
+  });
+}
+
+router.post("/addTobackOrder", (req, res) => {
+  const backOrderDetailsArray = req.body;
+  const generatedUUIDs = Array.from(
+    { length: backOrderDetailsArray.length },
+    () => uuid.v1()
+  );
+
+  console.log("backOrderDetailsArray", backOrderDetailsArray);
+
+  const query = "SELECT id, quantity FROM backorder WHERE productID = ?";
+  const insertQuery =
+    "INSERT INTO backorder (id, productID, quantity, status) VALUES (?, ?, ?, ?)";
+
+  const values = backOrderDetailsArray.map((backOrderDetails, index) => [
+    generatedUUIDs[index],
+    backOrderDetails.product_id,
+    backOrderDetails.quantity,
+    backOrderDetails.status,
+  ]);
+
+  values.forEach((params) => {
+    connection.query(query, [params[1]], (err, results) => {
+      if (err) {
+        return res.status(500).json({ err });
+      } else if (results.length > 0) {
+        // If record exists, update quantity
+        const updateQuery =
+          "UPDATE backorder SET quantity = quantity + ? WHERE id = ?";
+        connection.query(
+          updateQuery,
+          [params[2], results[0].id],
+          (updateErr, updateResults) => {
+            if (updateErr) {
+              return res.status(500).json({ updateErr });
+            }
+          }
+        );
+      } else {
+        // If record does not exist, insert a new record
+        connection.query(insertQuery, params, (insertErr, insertResults) => {
+          if (insertErr) {
+            return res.status(500).json({ insertErr });
+          }
+        });
+      }
+    });
+  });
+
+  return res
+    .status(200)
+    .json({ message: "Products added to back Order successfully" });
 });
 
 router.post("/getPDF", auth.authenticate, (req, res) => {

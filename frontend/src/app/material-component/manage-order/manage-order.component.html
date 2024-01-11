@@ -182,6 +182,7 @@
           <mat-label>Quantity</mat-label>
           <input
             type="number"
+            min="1"
             matInput
             formControlName="quantity"
             (keyup)="setQuantity($event)"
@@ -197,9 +198,10 @@
               >This field is mandatory</span
             >
           </mat-error>
+          <mat-error *ngIf="availableQauantity <= 0">Not inventry available</mat-error>
         </mat-form-field>
-
-        <mat-form-field appearance="fill" fxFlex>
+        
+                <mat-form-field appearance="fill" fxFlex>
           <mat-label>Total</mat-label>
           <input
             type="text"

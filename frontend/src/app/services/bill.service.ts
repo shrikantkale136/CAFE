@@ -22,6 +22,10 @@ export class BillService {
     );
   }
 
+  addTobackOrder(data: any){
+    return this.http.post(`${this.url}/bill/addToBackOrder`, data, this.jsonHeader);
+  }
+
   getPDF(data: any): Observable<Blob> {
     return this.http.post(`${this.url}/bill/getPDF`, data, {
       responseType: 'blob',

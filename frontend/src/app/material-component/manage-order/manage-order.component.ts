@@ -7,6 +7,7 @@ import { ProductService } from 'src/app/services/product.service';
 import { SnackbarService } from 'src/app/services/snackbar.service';
 import { GlobalConstants } from 'src/app/shared/global-constants';
 import { saveAs } from 'file-saver';
+import { error } from 'console';
 
 @Component({
   selector: 'app-manage-order',
@@ -14,6 +15,7 @@ import { saveAs } from 'file-saver';
   styleUrls: ['./manage-order.component.scss'],
 })
 export class ManageOrderComponent implements OnInit {
+  public availableQauantity: number = 0;
   manageOrderForm: any = FormGroup;
   displayedColumns: string[] = [
     'name',
@@ -29,7 +31,7 @@ export class ManageOrderComponent implements OnInit {
   price: any;
   totalAmount: number = 0;
   responseMessage: any;
-
+backOrderdataSrc: any[] = [];
   constructor(
     private fb: FormBuilder,
     private categoryService: CategoryService,
@@ -110,6 +112,8 @@ export class ManageOrderComponent implements OnInit {
   getProductDetails(value: any) {
     this.productService.getById(value.id).subscribe(
       (resp: any) => {
+        console.log("Available Data", resp.data);
+        this.availableQauantity = resp.data.quantity;
         this.price = resp.data.price;
         this.manageOrderForm.controls.price.setValue(resp.data.price);
         this.manageOrderForm.controls.quantity.setValue(1);
@@ -133,6 +137,7 @@ export class ManageOrderComponent implements OnInit {
       this.manageOrderForm.controls.total.setValue(
         this.manageOrderForm.controls.quantity.value *
           this.manageOrderForm.controls.price.value
+          
       );
     } else if (temp != '') {
       this.manageOrderForm.controls.quantity.setValue('1');
@@ -141,6 +146,14 @@ export class ManageOrderComponent implements OnInit {
           this.manageOrderForm.controls.price.value
       );
     }
+  }
+
+  updateBackOrderDB(qty:any, product_id:any) {
+    this.billService.addTobackOrder({quantity: qty, product_id: product_id}).subscribe(resp => {
+      console.log("Back Order Updated", resp);
+    }, error => {
+      console.log("Back Order Error", error);
+    })
   }
 
   validateProductAdd() {
@@ -178,6 +191,12 @@ export class ManageOrderComponent implements OnInit {
     );
     if (productName === undefined) {
       this.totalAmount += formData.total;
+      if(formData.quantity > this.availableQauantity) {
+        const backQty = formData.quantity - this.availableQauantity ;
+        this.backOrderdataSrc.push({quantity: backQty, product_id: formData.product.id, status: "unfinished"});
+        formData.quantity = this.availableQauantity ;
+        console.log("Back Order Data", this.backOrderdataSrc);
+      }
       this.dataSource.push({
         id: formData.product.id,
         name: formData.product.name,
@@ -186,7 +205,7 @@ export class ManageOrderComponent implements OnInit {
         price: formData.price,
         total: formData.total,
       });
-
+        
       this.dataSource = [...this.dataSource];
       this.snackBar.openSnackBar(GlobalConstants.productAdded, 'success');
     } else {
@@ -196,6 +215,7 @@ export class ManageOrderComponent implements OnInit {
       );
     }
   }
+
 
   handleDeletAction(value: any, element: any) {
     this.totalAmount -= element.total;
@@ -214,7 +234,9 @@ export class ManageOrderComponent implements OnInit {
       totalAmount: this.totalAmount,
       productDetails: JSON.stringify(this.dataSource),
     };
+    
 
+    this.addTobackOrder()
     this.billService.generateReport(data).subscribe(
       (resp: any) => {
         this.downloadFile(resp?.uuid);
@@ -232,6 +254,17 @@ export class ManageOrderComponent implements OnInit {
         this.snackBar.openSnackBar(this.responseMessage, GlobalConstants.error);
       }
     );
+  }
+
+  addTobackOrder() {
+    if(this.backOrderdataSrc.length > 0) {
+      this.billService.addTobackOrder(this.backOrderdataSrc).subscribe(resp => {
+        console.log("Back Order Updated", resp);
+      },error => {
+        console.log("Back Order Error", error);
+      });
+      this.backOrderdataSrc = [];
+    }
   }
 
   downloadFile(fileName: any) {

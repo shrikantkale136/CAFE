@@ -20,9 +20,19 @@ export class ProductService {
   update(data: any) {
     return this.http.patch(`${this.url}/product/update`, data, this.jsonHeader);
   }
-
   getProducts() {
     return this.http.get(`${this.url}/product/get`);
+  }
+  checkBackOrderQty(id: any) {
+    return this.http.get(`${this.url}/product/checkBackOrder/${id}`);
+  }
+
+  updateBackOrderQty(data: any) {
+    return this.http.patch(
+      `${this.url}/product/updateBackOrderQty`,
+      data,
+      this.jsonHeader
+    );
   }
 
   updateStatus(data: any) {

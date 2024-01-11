@@ -8,11 +8,17 @@ const router = express.Router();
 router.post("/add", auth.authenticate, role.checkRole, (req, res) => {
   let product = req.body;
   let query =
-    'insert into product (name, categoryID, description, price, status) values(?,?,?,?,"true")';
+    'insert into product (name, categoryID, description, price, quanity, status) values(?,?,?,?,?,"true")';
 
   connection.query(
     query,
-    [product.name, product.categoryID, product.description, product.price],
+    [
+      product.name,
+      product.categoryID,
+      product.description,
+      product.price,
+      product.quanity,
+    ],
     (err, results) => {
       if (!err) {
         return res.status(200).json({ message: "Product added successfully" });
@@ -23,9 +29,21 @@ router.post("/add", auth.authenticate, role.checkRole, (req, res) => {
   );
 });
 
+router.get("/checkBackOrder/:id", auth.authenticate, (req, res, next) => {
+  let id = req.params.id;
+  let query = "select quantity from backorder where productID=?";
+  connection.query(query, [id], (err, results) => {
+    if (!err) {
+      return res.status(200).json({ data: results });
+    } else {
+      return res.status(500).json({ err });
+    }
+  });
+});
+
 router.get("/get", auth.authenticate, (req, res, next) => {
   let query =
-    "select p.id, p.name, p.description, p.price, p.status, c.id as categoryID, c.name as categoryName from product as p INNER JOIN category as c where p.categoryID=c.id ";
+    "select p.id, p.name, p.description, p.price, p.`quantity`, p.status, c.id as categoryID, c.name as categoryName from product as p INNER JOIN category as c where p.categoryID=c.id ";
   connection.query(query, (err, results) => {
     if (!err) {
       return res.status(200).json({ data: results });
@@ -50,7 +68,8 @@ router.get("/getByCategoryID/:id", auth.authenticate, (req, res, next) => {
 
 router.get("/getByID/:id", (req, res, next) => {
   const id = req.params.id;
-  let query = "select id,name,description,price from product where id=?";
+  let query =
+    "select id,name,description,price,quantity from product where id=?";
   connection.query(query, [id], (err, results) => {
     if (!err) {
       return res.status(200).json({ data: results[0] });
@@ -62,8 +81,13 @@ router.get("/getByID/:id", (req, res, next) => {
 
 router.patch("/update", auth.authenticate, role.checkRole, (req, res, next) => {
   let product = req.body;
+
+  let checkBackOrderQuery = "select quantity from product where id=?";
   let query =
-    "update product set name=?, categoryID=?, description=?, price=?, where id=?";
+    "update product set name=?, categoryID=?, description=?, price=?, quantity=? where id=?";
+  console.log("Received product data:", product);
+  console.log("SQL Query:", query);
+
   connection.query(
     query,
     [
@@ -71,17 +95,20 @@ router.patch("/update", auth.authenticate, role.checkRole, (req, res, next) => {
       product.categoryID,
       product.description,
       product.price,
+      product.quantity,
       product.id,
     ],
     (err, results) => {
       if (!err) {
+        console.log("Update Results:", results);
         if (results.affectedRows == 0) {
           return res.status(404).json({ message: "Product ID not found" });
         }
         return res
           .status(200)
-          .json({ message: "product updated successfully" });
+          .json({ message: "Product updated successfully" });
       } else {
+        console.error("Update Error:", err);
         return res.status(500).json({ err });
       }
     }

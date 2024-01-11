@@ -63,6 +63,23 @@
             >
           </mat-error>
         </mat-form-field>
+
+        <mat-form-field appearance="fill">
+          <mat-label>Quantity</mat-label>
+          <input type="text" matInput formControlName="quantity" required />
+          <mat-error
+            *ngIf="
+              productForm.controls.quantity.touched &&
+              productForm.controls.quantity.invalid
+            "
+          >
+            <span *ngIf="productForm.controls.quantity.errors.required"
+              >This field is mandatory</span
+            >
+
+            
+          </mat-error>
+        </mat-form-field>
       </div>
 
       <div fxLayout="row wrap">
