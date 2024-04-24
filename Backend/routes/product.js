@@ -8,7 +8,7 @@ const router = express.Router();
 router.post("/add", auth.authenticate, role.checkRole, (req, res) => {
   let product = req.body;
   let query =
-    'insert into product (name, categoryID, description, price, quanity, status) values(?,?,?,?,?,"true")';
+    'insert into product (name, categoryID, description, price, quantity, status) values(?,?,?,?,?,"true")';
 
   connection.query(
     query,
@@ -17,7 +17,7 @@ router.post("/add", auth.authenticate, role.checkRole, (req, res) => {
       product.categoryID,
       product.description,
       product.price,
-      product.quanity,
+      product.quantity,
     ],
     (err, results) => {
       if (!err) {

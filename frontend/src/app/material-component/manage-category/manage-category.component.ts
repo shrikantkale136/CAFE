@@ -40,7 +40,7 @@ export class ManageCategoryComponent implements OnInit {
       },
       (error) => {
         this.ngxService.stop();
-        if (error.error?.message) {
+        if (error.error?.message) { 
           this.responseMessage = error.error?.message;
         } else {
           this.responseMessage = GlobalConstants.genericError;
