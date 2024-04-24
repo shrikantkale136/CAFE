@@ -114,7 +114,7 @@ export class ProductComponent implements OnInit {
     let formData = this.productForm.value;
     let updatedQty!:number;
     this.productService.checkBackOrderQty(this.dialogData.data.id).subscribe((res:any)=>{
-      console.log("checkbackOrderQty: ", res.data[0].quantity);
+      // console.log("checkbackOrderQty: ", res.data[0].quantity);
       
        this.backOrderQTY = (res.data.length > 0) ? res.data[0].quantity : null;
        updatedQty =  this.backOrderQTY && this.backOrderQTY != 0 ? formData.quantity -  this.backOrderQTY : formData.quantity;
